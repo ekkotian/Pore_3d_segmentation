@@ -16,21 +16,17 @@
 # !pip install efficientnet-3D
 # !pip install segmentation-models-3D
 
-import streamlit as st
-import tensorflow as tf
+
 import keras
-print(tf.__version__)
-print(keras.__version__)
+import tensorflow as tf
 
 #Make sure the GPU is available. 
-import tensorflow as tf
 device_name = tf.test.gpu_device_name()
 if device_name != '/device:GPU:0':
   raise SystemError('GPU device not found')
 print('Found GPU at: {}'.format(device_name))
 
 import segmentation_models_3D as sm
-
 from skimage import io
 from patchify import patchify, unpatchify
 import numpy as np
@@ -39,12 +35,13 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from keras.callbacks import EarlyStopping
+
 #Load input images and masks. 
-#Here we load 256x256x256 pixel volume. We will break it into patches of 64x64x64 for training. 
-image = io.imread('./train/train_3D.tif')
+#Here we load 1000x1000x1000 pixel volume. We will break it into patches of 64x64x64 for training. 
+image = io.imread('./train/train_3D.tif')             #load your training file
 img_patches = patchify(image, (64, 64, 64), step=64)  #Step=64 for 64 patches means no overlap
 
-mask = io.imread('./train/mask_train.tif')
+mask = io.imread('./train/mask_train.tif')             #load your mask file
 mask_patches = patchify(mask, (64, 64, 64), step=64)
 mask_patches = mask_patches/255
 plt.imshow(img_patches[1,2,3,:,:,32])
@@ -66,7 +63,7 @@ train_mask = np.expand_dims(input_mask, axis=4)
 
 train_mask_cat = to_categorical(train_mask, num_classes=n_classes)
 
-# 修改如下行，将不属于你感兴趣的类别合并到一个类别中
+# Modify the following lines to merge categories that are not of interest to you into one category
 # train_mask_cat = np.where(train_mask == 0, 0, 1)
 # train_mask_cat = train_mask_cat.astype(np.float32)
 # train_mask_cat = np.reshape(train_mask_cat, (-1, train_mask_cat.shape[1], train_mask_cat.shape[3], train_mask_cat.shape[4]))
@@ -90,8 +87,8 @@ def dice_coefficient_loss(y_true, y_pred):
 #Define parameters for our model.
 
 encoder_weights = 'imagenet'
-BACKBONE = 'inceptionv3'  #Try vgg16, efficientnetb7, inceptionv3, resnet50
-activation = 'sigmoid'
+BACKBONE = 'inceptionv3'  #Try vgg16, efficientnetb7, inceptionv3, resnet50...
+activation = 'sigmoid'     sigmoid for binary segmentation
 patch_size = 64
 n_classes = 2
 channels=3
